@@ -1,0 +1,69 @@
+name: iOS build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+
+      - name: Clone LoopKit and RileyLinkKit
+        run: |
+          mkdir -p deps
+          git clone --depth 1 https://github.com/LoopKit/LoopKit.git deps/LoopKit
+          git clone --depth 1 https://github.com/LoopKit/RileyLinkKit.git deps/RileyLinkKit
+
+      - name: Build LoopKit
+        run: |
+          set -euxo pipefail
+          xcodebuild -quiet -project deps/LoopKit/LoopKit.xcodeproj -target LoopKit \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+          xcodebuild -quiet -project deps/LoopKit/LoopKit.xcodeproj -target LoopKitUI \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+
+      - name: Build RileyLinkKit
+        run: |
+          set -euxo pipefail
+          xcodebuild -quiet -project deps/RileyLinkKit/RileyLinkKit.xcodeproj -target RileyLinkBLEKit \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+          xcodebuild -quiet -project deps/RileyLinkKit/RileyLinkKit.xcodeproj -target RileyLinkKit \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+          xcodebuild -quiet -project deps/RileyLinkKit/RileyLinkKit.xcodeproj -target RileyLinkKitUI \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+
+      - name: Build MinimedKit
+        run: |
+          set -euxo pipefail
+          xcodebuild -quiet -project MinimedKit.xcodeproj -target MinimedKit \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+          xcodebuild -quiet -project MinimedKit.xcodeproj -target MinimedKitUI \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+
+      - name: Show products
+        if: always()
+        run: find build -maxdepth 3 -name "*.framework" -o -name "*.swiftmodule" | head -30
