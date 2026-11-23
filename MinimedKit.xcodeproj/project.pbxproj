@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1B279C74FD184B598A0E5420 /* ReadSettings512CarelinkMessageBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C27E9236AFA460781DC3831 /* ReadSettings512CarelinkMessageBody.swift */; };
+		A91513B6FFED4722A6F05C32 /* Minimed712Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9835847401274F169B5B8537 /* Minimed712Support.swift */; };
 		B66D1F7B2E6A84EA00471149 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B66D1F7A2E6A84EA00471149 /* Localizable.xcstrings */; };
 		B66D1F7E2E6A84EA00471149 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B66D1F7D2E6A84EA00471149 /* Localizable.xcstrings */; };
 		C1229C2229C7ECA70066A89C /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1229C2129C7ECA70066A89C /* TimeInterval.swift */; };
@@ -352,6 +354,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9C27E9236AFA460781DC3831 /* ReadSettings512CarelinkMessageBody.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReadSettings512CarelinkMessageBody.swift; sourceTree = "<group>"; };
+		9835847401274F169B5B8537 /* Minimed712Support.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Minimed712Support.swift; sourceTree = "<group>"; };
 		B66D1F7A2E6A84EA00471149 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B66D1F7C2E6A84EA00471149 /* mul */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = mul; path = mul.lproj/MinimedPumpManager.xcstrings; sourceTree = "<group>"; };
 		B66D1F7D2E6A84EA00471149 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -891,6 +895,7 @@
 				C1E3495229C7A98C009A50A5 /* InsulinDataSource.swift */,
 				C1E3495329C7A98C009A50A5 /* MinimedDoseProgressEstimator.swift */,
 				C1E3495529C7A98C009A50A5 /* MinimedPumpManager.swift */,
+				9835847401274F169B5B8537 /* Minimed712Support.swift */,
 				C1E3494D29C7A98C009A50A5 /* MinimedPumpManagerError.swift */,
 				C1E3494629C7A98C009A50A5 /* MinimedPumpManagerRecents.swift */,
 				C1E3494529C7A98C009A50A5 /* MinimedPumpManagerState.swift */,
@@ -1012,6 +1017,7 @@
 				C1E349CB29C7A98C009A50A5 /* ReadOtherDevicesIDsMessageBody.swift */,
 				C1E349CC29C7A98C009A50A5 /* ReadTimeCarelinkMessageBody.swift */,
 				C1E349CD29C7A98C009A50A5 /* ReadSettingsCarelinkMessageBody.swift */,
+				9C27E9236AFA460781DC3831 /* ReadSettings512CarelinkMessageBody.swift */,
 				C1E349CE29C7A98C009A50A5 /* GetPumpFirmwareVersionMessageBody.swift */,
 				C1E349CF29C7A98C009A50A5 /* MessageType.swift */,
 				C1E349D029C7A98C009A50A5 /* ReadRemoteControlIDsMessageBody.swift */,
@@ -1502,6 +1508,7 @@
 				C1E34A6F29C7A98F009A50A5 /* ChangeSensorAlarmSilenceConfigPumpEvent.swift in Sources */,
 				C1E34A6929C7A98F009A50A5 /* AlarmClockReminderPumpEvent.swift in Sources */,
 				C1E34A4829C7A98F009A50A5 /* MinimedPumpManager.swift in Sources */,
+				A91513B6FFED4722A6F05C32 /* Minimed712Support.swift in Sources */,
 				C1E34A9829C7A98F009A50A5 /* PowerOnCarelinkMessageBody.swift in Sources */,
 				C1E34A8329C7A98F009A50A5 /* ResultDailyTotalPumpEvent.swift in Sources */,
 				C1E34A9B29C7A98F009A50A5 /* GetHistoryPageCarelinkMessageBody.swift in Sources */,
@@ -1544,6 +1551,7 @@
 				C1E34A3A29C7A98F009A50A5 /* EnliteSensorDisplayable.swift in Sources */,
 				C1E34A8029C7A98F009A50A5 /* ChangeBGReminderOffsetPumpEvent.swift in Sources */,
 				C1E34AB529C7A98F009A50A5 /* ReadSettingsCarelinkMessageBody.swift in Sources */,
+				1B279C74FD184B598A0E5420 /* ReadSettings512CarelinkMessageBody.swift in Sources */,
 				C1E34A9329C7A98F009A50A5 /* DailyTotal515PumpEvent.swift in Sources */,
 				C1E34A8129C7A98F009A50A5 /* ChangeWatchdogMarriageProfilePumpEvent.swift in Sources */,
 				C1E34A8E29C7A98F009A50A5 /* DeleteBolusReminderTimePumpEvent.swift in Sources */,
