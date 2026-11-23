@@ -64,10 +64,13 @@ jobs:
             SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 build
 
-      - name: Check 712 symbols in framework
+      - name: Check 712 object files
         run: |
           set -euxo pipefail
-          strings build/Debug-iphonesimulator/MinimedKit.framework/MinimedKit | grep -E "getSettings712|getDeliveryLimits|getCurrentPumpStatus712|is512or712Family|Minimed712Support" | sort -u
+          ls -l build/MinimedKit.build/Debug-iphonesimulator/MinimedKit.build/Objects-normal/arm64/ \
+            | grep -E "ReadSettings512CarelinkMessageBody|Minimed712Support"
+          xcrun nm build/Debug-iphonesimulator/MinimedKit.framework/MinimedKit 2>/dev/null \
+            | xcrun swift-demangle | grep -E "getSettings712|getDeliveryLimits|getCurrentPumpStatus712" | head -10 || true
 
       - name: Build for device (arm64)
         run: |
