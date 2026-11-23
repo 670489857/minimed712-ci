@@ -63,6 +63,10 @@ jobs:
             -sdk iphonesimulator -configuration Debug -arch arm64 \
             SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+          xcodebuild -quiet -project MinimedKit.xcodeproj -target MinimedKitPlugin \
+            -sdk iphonesimulator -configuration Debug -arch arm64 \
+            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 build
 
       - name: Check 712 object files
         run: |
@@ -82,7 +86,8 @@ jobs:
             "deps/RileyLinkKit/RileyLinkKit.xcodeproj:RileyLinkKit" \
             "deps/RileyLinkKit/RileyLinkKit.xcodeproj:RileyLinkKitUI" \
             "MinimedKit.xcodeproj:MinimedKit" \
-            "MinimedKit.xcodeproj:MinimedKitUI"; do
+            "MinimedKit.xcodeproj:MinimedKitUI" \
+            "MinimedKit.xcodeproj:MinimedKitPlugin"; do
             proj="${spec%%:*}"; target="${spec##*:}"
             xcodebuild -quiet -project "$proj" -target "$target" \
               -sdk iphoneos -configuration Release -arch arm64 \
