@@ -64,6 +64,30 @@ jobs:
             SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 build
 
+      - name: Check 712 symbols in framework
+        run: |
+          set -euxo pipefail
+          strings build/Debug-iphonesimulator/MinimedKit.framework/MinimedKit | grep -E "getSettings712|getDeliveryLimits|getCurrentPumpStatus712|is512or712Family|Minimed712Support" | sort -u
+
+      - name: Build for device (arm64)
+        run: |
+          set -euxo pipefail
+          for spec in \
+            "deps/LoopKit/LoopKit.xcodeproj:LoopKit" \
+            "deps/LoopKit/LoopKit.xcodeproj:LoopKitUI" \
+            "deps/RileyLinkKit/RileyLinkKit.xcodeproj:RileyLinkBLEKit" \
+            "deps/RileyLinkKit/RileyLinkKit.xcodeproj:RileyLinkKit" \
+            "deps/RileyLinkKit/RileyLinkKit.xcodeproj:RileyLinkKitUI" \
+            "MinimedKit.xcodeproj:MinimedKit" \
+            "MinimedKit.xcodeproj:MinimedKitUI"; do
+            proj="${spec%%:*}"; target="${spec##*:}"
+            xcodebuild -quiet -project "$proj" -target "$target" \
+              -sdk iphoneos -configuration Release -arch arm64 \
+              SYMROOT="$PWD/build-device" CODE_SIGNING_ALLOWED=NO \
+              IPHONEOS_DEPLOYMENT_TARGET=15.0 build
+          done
+          ls -la build-device/Release-iphoneos/MinimedKit.framework/MinimedKit
+
       - name: Show products
         if: always()
-        run: find build -maxdepth 3 -name "*.framework" -o -name "*.swiftmodule" | head -30
+        run: find build build-device -maxdepth 3 -name "*.framework" 2>/dev/null | head -30
