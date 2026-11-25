@@ -52,7 +52,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build > build.log 2>&1 || { tail -250 build.log; exit 1; }
+            build > build.log 2>&1 || { echo '--- ERRORS ---'; grep -n -E 'error:|fatal error:' build.log | head -80; echo '--- TAIL ---'; tail -300 build.log; exit 1; }
           grep -E "BUILD SUCCEEDED|BUILD FAILED" build.log | tail -5
 
       - name: Package unsigned IPA
@@ -69,6 +69,15 @@ jobs:
           cp -R "$APP" Payload/
           zip -qry Loop-712E-unsigned.ipa Payload
           ls -lh Loop-712E-unsigned.ipa
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Loop-build-log
+          path: ws/build.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
