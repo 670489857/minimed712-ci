@@ -277,14 +277,24 @@ class MinimedPumpIDSetupViewController: SetupTableViewController {
                         isSentrySetUpNeeded = true
                     }
                 } else {
-                    // Pre-sentry models need a remote ID to decrease the radio wake interval
-                    let remoteIDCount = try session.getRemoteControlIDs().ids.count
+                    // Pre-sentry models need a remote ID to decrease the radio wake interval.
+                    // Some 712/712E pumps do not expose a Remote ID list and NAK 0x76/0x51/0x57.
+                    // Treat this as best-effort for the 512/712 family so setup can continue.
+                    do {
+                        let remoteIDCount = try session.getRemoteControlIDs().ids.count
 
-                    if remoteIDCount == 0 {
-                        try session.setRemoteControlID(Data([9, 9, 9, 9, 9, 9]), atIndex: 2)
+                        if remoteIDCount == 0 {
+                            try session.setRemoteControlID(Data([9, 9, 9, 9, 9, 9]), atIndex: 2)
+                        }
+
+                        try session.setRemoteControlEnabled(true)
+                    } catch {
+                        if model.is512or712Family {
+                            print("Minimed 712/712E remote control setup skipped: \(error)")
+                        } else {
+                            throw error
+                        }
                     }
-
-                    try session.setRemoteControlEnabled(true)
                 }
 
                 // Settings
