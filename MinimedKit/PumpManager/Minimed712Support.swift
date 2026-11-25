@@ -62,7 +62,7 @@ public extension PumpOpsSession {
             to: PumpMessage(pumpID: settings.pumpID, type: .readSettings512),
             responseType: .readSettings512,
             repeatCount: 0,
-            timeout: MinimedPumpMessageSender.standardPumpResponseWindow,
+            timeout: responseWindow,
             retryCount: 3
         )
     }

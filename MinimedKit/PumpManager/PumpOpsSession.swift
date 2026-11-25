@@ -62,6 +62,15 @@ public class PumpOpsSession {
     public let settings: PumpSettings
     let messageSender: PumpMessageSender
 
+    /// 512/712 的射频应答比 522+ 慢；默认 200ms 容易在泵刚启动电机时丢 ACK。
+    /// 这里只放宽到 600ms，正常应答仍然立即返回，不会固定等满。
+    var responseWindow: TimeInterval {
+        if pump.pumpModel?.is512or712Family == true {
+            return .milliseconds(600)
+        }
+        return MinimedPumpMessageSender.standardPumpResponseWindow
+    }
+
     private unowned let delegate: PumpOpsSessionDelegate
     
     public init(settings: PumpSettings, pumpState: PumpState, messageSender: PumpMessageSender, delegate: PumpOpsSessionDelegate) {
@@ -117,7 +126,7 @@ extension PumpOpsSession {
 
     private func isPumpResponding() -> Bool {
         do {
-            let _: GetPumpModelCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .getPumpModel), responseType: .getPumpModel, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 1)
+            let _: GetPumpModelCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .getPumpModel), responseType: .getPumpModel, repeatCount: 0, timeout: responseWindow,  retryCount: 1)
             return true
         } catch {
             return false
@@ -154,7 +163,7 @@ extension PumpOpsSession {
         // Arguments
         do {
             let longPowerMessage = PumpMessage(pumpID: settings.pumpID, type: .powerOn, body: PowerOnCarelinkMessageBody(duration: duration))
-            let _: PumpAckMessageBody = try messageSender.getResponse(to: longPowerMessage, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let _: PumpAckMessageBody = try messageSender.getResponse(to: longPowerMessage, responseType: .pumpAck, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         } catch let error as PumpOpsError {
             throw PumpCommandError.arguments(error)
         } catch {
@@ -188,7 +197,7 @@ extension PumpOpsSession {
         }
 
         try wakeup()
-        let body: GetPumpModelCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .getPumpModel), responseType: .getPumpModel, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        let body: GetPumpModelCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .getPumpModel), responseType: .getPumpModel, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
 
         guard let pumpModel = PumpModel(rawValue: body.model) else {
             throw PumpOpsError.unknownPumpModel(body.model)
@@ -214,7 +223,7 @@ extension PumpOpsSession {
     public func getPumpFirmwareVersion() throws -> String {
         
         try wakeup()
-        let body: GetPumpFirmwareVersionMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readFirmwareVersion), responseType: .readFirmwareVersion, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        let body: GetPumpFirmwareVersionMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readFirmwareVersion), responseType: .readFirmwareVersion, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         
         return body.version
     }
@@ -230,7 +239,7 @@ extension PumpOpsSession {
     ///     - PumpOpsError.unknownResponse
     public func getBatteryStatus() throws -> GetBatteryCarelinkMessageBody {
         try wakeup()
-        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .getBattery), responseType: .getBattery, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .getBattery), responseType: .getBattery, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
     }
 
     /// - Throws:
@@ -244,7 +253,7 @@ extension PumpOpsSession {
     ///     - PumpOpsError.unknownResponse
     internal func getPumpStatus() throws -> ReadPumpStatusMessageBody {
         try wakeup()
-        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readPumpStatus), responseType: .readPumpStatus, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readPumpStatus), responseType: .readPumpStatus, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
     }
 
     /// - Throws:
@@ -258,7 +267,7 @@ extension PumpOpsSession {
     ///     - PumpOpsError.unknownResponse
     public func getSettings() throws -> ReadSettingsCarelinkMessageBody {
         try wakeup()
-        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readSettings), responseType: .readSettings, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readSettings), responseType: .readSettings, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
     }
 
     /// Reads the pump's time, returning a set of DateComponents in the pump's presumed time zone.
@@ -275,7 +284,7 @@ extension PumpOpsSession {
     ///     - PumpOpsError.unknownResponse
     public func getTime() throws -> DateComponents {
         try wakeup()
-        let response: ReadTimeCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readTime), responseType: .readTime, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        let response: ReadTimeCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readTime), responseType: .readTime, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         var components = response.dateComponents
         components.timeZone = pump.timeZone
         return components
@@ -300,7 +309,7 @@ extension PumpOpsSession {
         var message = PumpMessage(pumpID: settings.pumpID, type: profile.readMessageType)
         var scheduleData = Data()
         while (!isFinished) {
-            let body: DataFrameMessageBody = try messageSender.getResponse(to: message, responseType: profile.readMessageType, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let body: DataFrameMessageBody = try messageSender.getResponse(to: message, responseType: profile.readMessageType, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
 
             scheduleData.append(body.contents)
             isFinished = body.isLastFrame
@@ -320,7 +329,7 @@ extension PumpOpsSession {
     public func getOtherDevicesIDs() throws -> ReadOtherDevicesIDsMessageBody {
         try wakeup()
 
-        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readOtherDevicesIDs), responseType: .readOtherDevicesIDs, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readOtherDevicesIDs), responseType: .readOtherDevicesIDs, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
     }
 
     /// - Throws:
@@ -333,7 +342,7 @@ extension PumpOpsSession {
     public func getOtherDevicesEnabled() throws -> Bool {
         try wakeup()
 
-        let response: ReadOtherDevicesStatusMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readOtherDevicesStatus), responseType: .readOtherDevicesStatus, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        let response: ReadOtherDevicesStatusMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readOtherDevicesStatus), responseType: .readOtherDevicesStatus, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         return response.isEnabled
     }
 
@@ -347,7 +356,7 @@ extension PumpOpsSession {
     public func getRemoteControlIDs() throws -> ReadRemoteControlIDsMessageBody {
         try wakeup()
 
-        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readRemoteControlIDs), responseType: .readRemoteControlIDs, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        return try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readRemoteControlIDs), responseType: .readRemoteControlIDs, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
     }
 }
 
@@ -385,7 +394,7 @@ extension PumpOpsSession {
         let pumpModel = try getPumpModel()
         let pumpClock = try getTime()
 
-        let reservoir: ReadRemainingInsulinMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readRemainingInsulin), responseType: .readRemainingInsulin, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        let reservoir: ReadRemainingInsulinMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readRemainingInsulin), responseType: .readRemainingInsulin, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
 
         return (
             units: reservoir.getUnitsRemaining(insulinBitPackingScale: pumpModel.insulinBitPackingScale),
@@ -435,12 +444,13 @@ extension PumpOpsSession {
     }
 
     /// - Throws: `PumpCommandError` specifying the failure sequence
-    private func runCommandWithArguments<T: MessageBody>(_ message: PumpMessage, responseType: MessageType = .pumpAck, retryCount: Int = 3, testingFailureMode: CommandTestingFailureMode? = nil) throws -> T {
+    private func runCommandWithArguments<T: MessageBody>(_ message: PumpMessage, responseType: MessageType = .pumpAck, retryCount: Int = 3, timeout: TimeInterval? = nil, testingFailureMode: CommandTestingFailureMode? = nil) throws -> T {
+        let commandResponseWindow = timeout ?? responseWindow
         do {
             try wakeup()
 
             let shortMessage = PumpMessage(packetType: message.packetType, address: message.address.hexadecimalString, messageType: message.messageType, messageBody: CarelinkShortMessageBody())
-            let _: PumpAckMessageBody = try messageSender.getResponse(to: shortMessage, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let _: PumpAckMessageBody = try messageSender.getResponse(to: shortMessage, responseType: .pumpAck, repeatCount: 0, timeout: commandResponseWindow,  retryCount: 3)
         } catch let error as PumpOpsError {
             throw PumpCommandError.command(error)
         }
@@ -449,7 +459,7 @@ extension PumpOpsSession {
             if testingFailureMode == .argumentFailureDoNotSendArguments {
                 throw PumpOpsError.noResponse(during: "argumentFailureDoNotSendArguments")
             }
-            let response: T = try messageSender.getResponse(to: message, responseType: responseType, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: retryCount)
+            let response: T = try messageSender.getResponse(to: message, responseType: responseType, repeatCount: 0, timeout: commandResponseWindow,  retryCount: retryCount)
             if testingFailureMode == .argumentFailureDoSendArguments {
                 throw PumpOpsError.noResponse(during: "argumentFailureDoSendArguments")
             }
@@ -524,7 +534,7 @@ extension PumpOpsSession {
 
         do {
             let shortMessage = PumpMessage(packetType: message.packetType, address: message.address.hexadecimalString, messageType: message.messageType, messageBody: CarelinkShortMessageBody())
-            let _: PumpAckMessageBody = try messageSender.getResponse(to: shortMessage, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let _: PumpAckMessageBody = try messageSender.getResponse(to: shortMessage, responseType: .pumpAck, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         } catch {
             // Certain failure, as we haven't sent actual command yet; just preflight short command
             return .failure(.command(error as? PumpOpsError ?? PumpOpsError.rfCommsFailure(String(describing: error))))
@@ -533,7 +543,7 @@ extension PumpOpsSession {
         var uncertainFailureError: PumpCommandError?
 
         do {
-            let _: PumpAckMessageBody = try messageSender.getResponse(to: message, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 1)
+            let _: PumpAckMessageBody = try messageSender.getResponse(to: message, responseType: .pumpAck, repeatCount: 0, timeout: responseWindow,  retryCount: 1)
             // Even in success case, we try to verify, below
         } catch PumpOpsError.pumpError(let errorCode) {
             return .failure(.arguments(.pumpError(errorCode)))
@@ -545,7 +555,7 @@ extension PumpOpsSession {
         }
 
         do {
-            let response: ReadTempBasalCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readTempBasal), responseType: .readTempBasal, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let response: ReadTempBasalCarelinkMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readTempBasal), responseType: .readTempBasal, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
             // Duration is always whole minute values
             if response.timeRemaining == duration && response.rateType == .absolute {
                 return .success(true)
@@ -572,7 +582,7 @@ extension PumpOpsSession {
 
         do {
             let shortMessage = PumpMessage(pumpID: settings.pumpID, type: .changeTime)
-            let _: PumpAckMessageBody = try messageSender.getResponse(to: shortMessage, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let _: PumpAckMessageBody = try messageSender.getResponse(to: shortMessage, responseType: .pumpAck, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         } catch let error as PumpOpsError {
             throw PumpCommandError.command(error)
         }
@@ -580,7 +590,7 @@ extension PumpOpsSession {
         do {
             let components = generator()
             let message = PumpMessage(pumpID: settings.pumpID, type: .changeTime, body: ChangeTimeCarelinkMessageBody(dateComponents: components)!)
-            let _: PumpAckMessageBody = try messageSender.getResponse(to: message, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+            let _: PumpAckMessageBody = try messageSender.getResponse(to: message, responseType: .pumpAck, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
             self.pump.timeZone = components.timeZone?.fixed ?? .currentFixed
         } catch let error as PumpOpsError {
             throw PumpCommandError.arguments(error)
@@ -651,7 +661,12 @@ extension PumpOpsSession {
 //                testMode = nil
 //            }
 
-            let _: PumpAckMessageBody = try runCommandWithArguments(message, testingFailureMode: testMode)
+            // 712/712E：大剂量命令只发一次，确认窗口放宽到 2 秒。
+            // 若 ACK 丢失，Loop 会按“可能已输注”处理；绝不自动重发第二条大剂量。
+            let bolusTimeout: TimeInterval = pumpModel.is512or712Family ? .seconds(2) : responseWindow
+            let bolusRetryCount = pumpModel.is512or712Family ? 0 : 3
+
+            let _: PumpAckMessageBody = try runCommandWithArguments(message, retryCount: bolusRetryCount, timeout: bolusTimeout, testingFailureMode: testMode)
         } catch let error as PumpOpsError {
             return SetBolusError.certain(error)
         } catch let error as PumpCommandError {
@@ -721,7 +736,7 @@ extension PumpOpsSession {
         for nextFrame in frames.dropFirst() {
             let message = PumpMessage(pumpID: settings.pumpID, type: type, body: nextFrame)
             do {
-                let _: PumpAckMessageBody = try messageSender.getResponse(to: message, responseType: .pumpAck, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+                let _: PumpAckMessageBody = try messageSender.getResponse(to: message, responseType: .pumpAck, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
             } catch let error as PumpOpsError {
                 throw PumpCommandError.arguments(error)
             }
@@ -1035,7 +1050,7 @@ extension PumpOpsSession {
             expectedFrameNum += 1
             let msg = PumpMessage(pumpID: settings.pumpID, type: .pumpAck)
             if !curResp.lastFrame {
-                curResp = try messageSender.getResponse(to: msg, responseType: .getHistoryPage, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+                curResp = try messageSender.getResponse(to: msg, responseType: .getHistoryPage, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
             } else {
                 try messageSender.send(msg)
                 break
@@ -1076,7 +1091,7 @@ extension PumpOpsSession {
         
         var events = [TimestampedGlucoseEvent]()
         
-        let currentGlucosePage: ReadCurrentGlucosePageMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readCurrentGlucosePage), responseType: .readCurrentGlucosePage, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+        let currentGlucosePage: ReadCurrentGlucosePageMessageBody = try messageSender.getResponse(to: PumpMessage(pumpID: settings.pumpID, type: .readCurrentGlucosePage), responseType: .readCurrentGlucosePage, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
         let startPage = Int(currentGlucosePage.pageNum)
         //max lookback of 15 pages or when page is 0
         let endPage = max(startPage - 15, 0)
@@ -1142,7 +1157,7 @@ extension PumpOpsSession {
             expectedFrameNum += 1
             let msg = PumpMessage(pumpID: settings.pumpID, type: .pumpAck)
             if !curResp.lastFrame {
-                curResp = try messageSender.getResponse(to: msg, responseType: .getGlucosePage, repeatCount: 0, timeout: MinimedPumpMessageSender.standardPumpResponseWindow,  retryCount: 3)
+                curResp = try messageSender.getResponse(to: msg, responseType: .getGlucosePage, repeatCount: 0, timeout: responseWindow,  retryCount: 3)
             } else {
                 try messageSender.send(msg)
                 break
