@@ -17,8 +17,16 @@ jobs:
       - name: Install watchOS platform
         run: |
           set -euxo pipefail
-          xcodebuild -downloadPlatform watchOS
-          xcodebuild -showsdks
+          for attempt in 1 2 3; do
+            if xcodebuild -downloadPlatform watchOS; then
+              break
+            fi
+            echo "watchOS download attempt $attempt failed; restarting CoreSimulator"
+            sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService || true
+            sleep 30
+          done
+          xcodebuild -showsdks | grep -i watchOS
+          xcrun --sdk watchos --show-sdk-path
 
       - name: Clone LoopWorkspace and submodules
         run: |
@@ -52,6 +60,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            SWIFT_COMPILATION_MODE=singlefile \
             build > build.log 2>&1 || { echo '--- ERRORS ---'; grep -n -E 'error:|fatal error:' build.log | head -80; echo '--- TAIL ---'; tail -300 build.log; exit 1; }
           grep -E "BUILD SUCCEEDED|BUILD FAILED" build.log | tail -5
 
