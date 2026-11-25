@@ -14,6 +14,12 @@ jobs:
         with:
           path: patched-minimed
 
+      - name: Install watchOS platform
+        run: |
+          set -euxo pipefail
+          xcodebuild -downloadPlatform watchOS
+          xcodebuild -showsdks
+
       - name: Clone LoopWorkspace and submodules
         run: |
           set -euxo pipefail
